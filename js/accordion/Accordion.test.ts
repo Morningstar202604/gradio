@@ -361,6 +361,34 @@ describe("Edge cases", () => {
 		expectContentOpen(getByTestId);
 	});
 
+	test("set_data({ visible: true, open: true }) on a hidden accordion expands it", async () => {
+		const { getByTestId, set_data } = await render(Accordion, {
+			...base_props,
+			open: false,
+			visible: false
+		});
+
+		expectContentClosed(getByTestId);
+
+		await set_data({ visible: true, open: true });
+		expectContentOpen(getByTestId);
+	});
+
+	test("a later unrelated prop update does not collapse the accordion after the user opened it", async () => {
+		const { getByRole, getByTestId, set_data } = await render(Accordion, {
+			...base_props,
+			open: false
+		});
+
+		const button = getByRole("button", { ...hidden, name: /Test Accordion/ });
+		await fireEvent.click(button);
+		expectContentOpen(getByTestId);
+
+		// an unrelated update from the backend must not reset the user's choice
+		await set_data({ label: "Renamed Accordion" });
+		expectContentOpen(getByTestId);
+	});
+
 	test("empty label renders the button with no label text", async () => {
 		const { getByRole } = await render(Accordion, {
 			...base_props,

@@ -16,14 +16,17 @@
 			const old_open = this.props.open;
 			super.set_data(data);
 			if ("open" in data && data.open !== old_open) {
+				// dispatching synchronously here races with the open state update
+				// and can leave the shared accordion rendering as closed until a
+				// subsequent state change flushes it. Dispatch both events after
+				// the DOM flush so the visual state is applied first.
 				if (data.open) {
-					this.dispatch("expand");
-					// dispatching synchronously here races with the open state update
-					// this can leave the shared accordion rendering as closed until
-					// a subsequent state change flushes it.
-					tick().then(() => this.dispatch("gradio_expand"));
+					tick().then(() => {
+						this.dispatch("expand");
+						this.dispatch("gradio_expand");
+					});
 				} else {
-					this.dispatch("collapse");
+					tick().then(() => this.dispatch("collapse"));
 				}
 			}
 			this.shared.loading_status.status = "complete";
@@ -53,7 +56,7 @@
 
 	<Accordion
 		{label}
-		open={gradio.props.open}
+		bind:open={gradio.props.open}
 		height={gradio.props.height != null
 			? css_units(gradio.props.height)
 			: undefined}
